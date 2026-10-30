@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>DarkChat</title>
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #111827;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #login {
+            position: fixed;
+            inset: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            background: #111827;
+
+            z-index: 10;
+        }
+
+        #login-box {
+            width: 90%;
+            max-width: 400px;
+
+            background: #1f2937;
+
+            padding: 30px;
+
+            border-radius: 15px;
+        }
+
+        #login-box h1 {
+            margin-bottom: 20px;
+        }
+
+        #chat-container {
+            height: 100vh;
+
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: #1f2937;
+
+            padding: 20px;
+
+            border-bottom: 1px solid #374151;
+
+            position: relative;
+        }
+
+        #title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        #status {
+            margin-top: 5px;
+
+            font-size: 12px;
+
+            color: #9ca3af;
+        }
+
+        #owner-badge {
+            display: none;
+
+            margin-top: 5px;
+
+            font-size: 12px;
+
+            color: gold;
+        }
+
+        #header-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        #user-list-toggle {
+            position: relative;
+            cursor: pointer;
+        }
+
+        #banned-list-wrap {
+            position: relative;
+        }
+
+        #clear-chat-btn,
+        #banned-list-btn {
+            display: none;
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+
+        #clear-chat-btn {
+            background: #991b1b;
+        }
+
+        #banned-list-btn {
+            background: #7c2d12;
+        }
+
+        #user-list-panel,
+        #banned-list-panel {
+            display: none;
+            position: absolute;
+            top: 24px;
+            left: 0;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            padding: 10px;
+            min-width: 200px;
+            max-height: 240px;
+            overflow-y: auto;
+            z-index: 20;
+            font-size: 13px;
+        }
+
+        #user-list-panel.visible,
+        #banned-list-panel.visible {
+            display: block;
+        }
+
+        #user-list-panel div {
+            padding: 4px 0;
+        }
+
+        #banned-list-panel .banned-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        #banned-list-panel .banned-row:last-child {
+            border-bottom: none;
+        }
+
+        #banned-list-panel button {
+            padding: 3px 8px;
+            font-size: 10px;
+            background: #166534;
+        }
+
+        #pinned-bar {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+
+            background: #422006;
+            border-bottom: 2px solid gold;
+
+            padding: 10px 20px;
+
+            font-size: 13px;
+        }
+
+        #pinned-bar.visible {
+            display: flex;
+        }
+
+        #pinned-bar span {
+            opacity: 0.9;
+        }
+
+        #pinned-bar button {
+            padding: 4px 10px;
+            font-size: 11px;
+            background: #991b1b;
+            flex-shrink: 0;
+        }
+
+        #messages {
+            flex: 1;
+
+            overflow-y: auto;
+
+            padding: 20px;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 10px;
+        }
+
+        .message {
+            background: #374151;
+
+            padding: 12px;
+
+            border-radius: 12px;
+
+            max-width: 75%;
+
+            word-break: break-word;
+        }
+
+        .message img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 4px;
+            display: block;
+            cursor: pointer;
+        }
+
+        .own-message {
+            align-self: flex-end;
+
+            background: #2563eb;
+        }
+
+        .owner-message {
+            background: #b8860b !important;
+
+            border: 2px solid gold;
+        }
+
+        .username {
+            font-size: 12px;
+
+            opacity: 0.7;
+
+            margin-bottom: 5px;
+
+            font-weight: bold;
+        }
+
+        .message-text {
+            font-size: 15px;
+        }
+
+        #input-area {
+            display: flex;
+
+            gap: 10px;
+
+            padding: 15px;
+
+            background: #1f2937;
+        }
+
+        input {
+            flex: 1;
+
+            padding: 14px;
+
+            border: none;
+
+            outline: none;
+
+            border-radius: 8px;
+
+            background: #374151;
+
+            color: white;
+
+            font-size: 15px;
+        }
+
+        input:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button {
+            border: none;
+
+            border-radius: 8px;
+
+            padding: 12px 18px;
+
+            background: #2563eb;
+
+            color: white;
+
+            cursor: pointer;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+        }
+
+        #image-button {
+            background: #4b5563;
+            flex: none;
+        }
+
+        .delete-button {
+            margin-top: 10px;
+
+            padding: 5px 8px;
+
+            font-size: 11px;
+
+            background: #991b1b;
+        }
+
+        .ban-button {
+            margin-top: 10px;
+            margin-left: 5px;
+
+            padding: 5px 8px;
+
+            font-size: 11px;
+
+            background: #7c2d12;
+        }
+
+        .mute-button {
+            margin-top: 10px;
+            margin-left: 5px;
+
+            padding: 5px 8px;
+
+            font-size: 11px;
+
+            background: #854d0e;
+        }
+
+        .kick-button {
+            margin-top: 10px;
+            margin-left: 5px;
+
+            padding: 5px 8px;
+
+            font-size: 11px;
+
+            background: #57534e;
+        }
+
+        .pin-button {
+            margin-top: 10px;
+            margin-left: 5px;
+
+            padding: 5px 8px;
+
+            font-size: 11px;
+
+            background: #4338ca;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+    <!-- LOGIN -->
+
+    <div id="login">
+
+        <div id="login-box">
+
+            <h1>DarkChat</h1>
+
+            <input
+                id="usernameInput"
+                type="text"
+                maxlength="20"
+                placeholder="Dein Name..."
+            >
+
+            <br><br>
+
+            <button onclick="joinChat()">
+                Chat betreten
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <!-- CHAT -->
+
+    <div id="chat-container">
+
+        <header>
+
+            <div id="title">
+                DarkChat
+            </div>
+
+            <div id="status">
+                Verbindung wird hergestellt...
+            </div>
+
+            <div id="owner-badge">
+                ★ OWNER
+            </div>
+
+            <div id="header-controls">
+
+                <div id="user-list-toggle" onclick="toggleUserList()">
+                    👥 <span id="online-count">0</span> online
+                    <div id="user-list-panel"></div>
+                </div>
+
+                <button id="clear-chat-btn" onclick="clearChat()">
+                    🗑 Chat leeren
+                </button>
+
+                <div id="banned-list-wrap">
+                    <button id="banned-list-btn" onclick="toggleBannedList()">
+                        🚫 Gesperrte
+                    </button>
+                    <div id="banned-list-panel"></div>
+                </div>
+
+            </div>
+
+        </header>
+
+        <div id="pinned-bar">
+            <span id="pinned-text"></span>
+            <button id="unpin-btn" onclick="unpinMessage()" style="display:none;">
+                Lösen
+            </button>
+        </div>
+
+
+        <div id="messages"></div>
+
+
+        <div id="input-area">
+
+            <input
+                id="imageInput"
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                style="display:none"
+            >
+
+            <button id="image-button" onclick="document.getElementById('imageInput').click()" title="Bild senden">
+                📎
+            </button>
+
+            <input
+                id="messageInput"
+                type="text"
+                maxlength="1000"
+                placeholder="Schreibe eine Nachricht..."
+            >
+
+            <button onclick="sendMessage()">
+                Senden
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+
+
+    <script>
+
+        // HIER DEINE CLOUDFLARE-ADRESSE EINTRAGEN
+
+        const SERVER_URL =
+            "https://provinces-deferred-closed-debut.trycloudflare.com";
+
+
+        const socket = io(SERVER_URL);
+
+
+        let username = "";
+
+        let isOwner = false;
+
+
+        // VERBINDUNG
+
+        socket.on("connect", () => {
+
+            document
+                .getElementById("status")
+                .textContent =
+                "● Verbunden";
+
+        });
+
+
+        socket.on("disconnect", () => {
+
+            document
+                .getElementById("status")
+                .textContent =
+                "● Verbindung getrennt";
+
+        });
+
+
+        // CHAT BETRETEN
+
+        function joinChat() {
+
+            const input =
+                document
+                .getElementById("usernameInput");
+
+            username =
+                input.value.trim();
+
+            if (!username) return;
+
+
+            document
+                .getElementById("login")
+                .style.display =
+                "none";
+
+
+            socket.emit(
+                "join",
+                username
+            );
+
+        }
+
+
+        // TEXTNACHRICHT SENDEN
+
+        function sendMessage() {
+
+            const input =
+                document
+                .getElementById("messageInput");
+
+
+            const text =
+                input.value.trim();
+
+
+            if (!text) return;
+
+
+            socket.emit(
+                "chat message",
+                { type: "text", text }
+            );
+
+
+            input.value = "";
+
+        }
+
+
+        // ENTER SENDEN
+
+        document
+            .getElementById("messageInput")
+            .addEventListener(
+                "keydown",
+                function(event) {
+
+                    if (event.key === "Enter") {
+
+                        sendMessage();
+
+                    }
+
+                }
+            );
+
+
+        // BILD SENDEN
+
+        document
+            .getElementById("imageInput")
+            .addEventListener(
+                "change",
+                async function(event) {
+
+                    const file = event.target.files[0];
+
+                    if (!file) return;
+
+                    await sendImage(file);
+
+                    event.target.value = "";
+
+                }
+            );
+
+
+        async function sendImage(file) {
+
+            const formData = new FormData();
+
+            formData.append("image", file);
+
+            let response;
+
+            try {
+
+                response = await fetch(
+                    SERVER_URL + "/upload",
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+            } catch (err) {
+
+                alert("Upload fehlgeschlagen. Server nicht erreichbar.");
+                return;
+
+            }
+
+            const data = await response.json();
+
+            if (!response.ok) {
+
+                alert(data.error || "Bild konnte nicht gesendet werden.");
+                return;
+
+            }
+
+            socket.emit(
+                "chat message",
+                { type: "image", imageUrl: data.url }
+            );
+
+        }
+
+
+        // STRG + G = OWNER LOGIN
+
+        document.addEventListener(
+            "keydown",
+            function(event) {
+
+                if (
+                    event.ctrlKey &&
+                    event.key.toLowerCase() === "g"
+                ) {
+
+                    event.preventDefault();
+
+
+                    const code =
+                        prompt(
+                            "Owner-Code:"
+                        );
+
+
+                    if (code) {
+
+                        socket.emit(
+                            "owner login",
+                            code
+                        );
+
+                    }
+
+                }
+
+            }
+        );
+
+
+        // OWNER ANTWORT
+
+        socket.on(
+            "owner status",
+            function(data) {
+
+                if (data.success) {
+
+                    isOwner = true;
+
+
+                    document
+                        .getElementById("owner-badge")
+                        .style.display =
+                        "block";
+
+
+                    document
+                        .getElementById("clear-chat-btn")
+                        .style.display =
+                        "inline-block";
+
+
+                    document
+                        .getElementById("banned-list-btn")
+                        .style.display =
+                        "inline-block";
+
+
+                    alert(
+                        "Owner aktiviert."
+                    );
+
+                } else {
+
+                    alert(
+                        "Falscher Code."
+                    );
+
+                }
+
+            }
+        );
+
+
+        // ALTE NACHRICHTEN LADEN
+
+        socket.on(
+            "load messages",
+            function(messages) {
+
+                messages.forEach(
+                    addMessage
+                );
+
+            }
+        );
+
+
+        // NEUE NACHRICHT
+
+        socket.on(
+            "chat message",
+            function(data) {
+
+                addMessage(data);
+
+            }
+        );
+
+
+        // NACHRICHT ANZEIGEN
+
+        function addMessage(data) {
+
+            const messages =
+                document
+                .getElementById("messages");
+
+
+            const messageElement =
+                document
+                .createElement("div");
+
+
+            messageElement
+                .classList
+                .add("message");
+
+
+            messageElement.dataset.id =
+                data.id;
+
+
+            if (
+                data.socketId === socket.id
+            ) {
+
+                messageElement
+                    .classList
+                    .add("own-message");
+
+            }
+
+
+            if (data.owner) {
+
+                messageElement
+                    .classList
+                    .add("owner-message");
+
+            }
+
+
+            const usernameElement =
+                document
+                .createElement("div");
+
+
+            usernameElement
+                .classList
+                .add("username");
+
+
+            usernameElement.textContent =
+                data.owner
+                    ? "★ OWNER • " + data.username
+                    : data.username;
+
+
+            messageElement.appendChild(
+                usernameElement
+            );
+
+
+            if (data.type === "image") {
+
+                const imgElement =
+                    document.createElement("img");
+
+                imgElement.src =
+                    SERVER_URL + data.imageUrl;
+
+                imgElement.alt = "Bild von " + data.username;
+
+                imgElement.onclick = function() {
+                    window.open(imgElement.src, "_blank");
+                };
+
+                messageElement.appendChild(imgElement);
+
+            } else {
+
+                const textElement =
+                    document
+                    .createElement("div");
+
+
+                textElement
+                    .classList
+                    .add("message-text");
+
+
+                textElement.textContent =
+                    data.text;
+
+
+                messageElement.appendChild(
+                    textElement
+                );
+
+            }
+
+
+            // OWNER-BUTTONS (Löschen, Sperren, Stumm, Kick — nur bei fremden Nachrichten)
+
+            if (
+                isOwner &&
+                !data.owner
+            ) {
+
+                const deleteButton =
+                    document
+                    .createElement("button");
+
+
+                deleteButton.textContent =
+                    "Löschen";
+
+
+                deleteButton
+                    .classList
+                    .add("delete-button");
+
+
+                deleteButton.onclick =
+                    function() {
+
+                        socket.emit(
+                            "delete message",
+                            data.id
+                        );
+
+                    };
+
+
+                const banButton =
+                    document
+                    .createElement("button");
+
+
+                banButton.textContent =
+                    "Sperren";
+
+
+                banButton
+                    .classList
+                    .add("ban-button");
+
+
+                banButton.onclick =
+                    function() {
+
+                        const confirmBan =
+                            confirm(
+                                data.username +
+                                " wirklich dauerhaft sperren?"
+                            );
+
+
+                        if (confirmBan) {
+
+                            socket.emit(
+                                "ban user",
+                                data.socketId
+                            );
+
+                        }
+
+                    };
+
+
+                const muteButton =
+                    document
+                    .createElement("button");
+
+
+                muteButton.textContent =
+                    "Stumm";
+
+
+                muteButton
+                    .classList
+                    .add("mute-button");
+
+
+                muteButton.onclick =
+                    function() {
+
+                        socket.emit(
+                            "mute user",
+                            data.socketId
+                        );
+
+                    };
+
+
+                const kickButton =
+                    document
+                    .createElement("button");
+
+
+                kickButton.textContent =
+                    "Kick";
+
+
+                kickButton
+                    .classList
+                    .add("kick-button");
+
+
+                kickButton.onclick =
+                    function() {
+
+                        socket.emit(
+                            "kick user",
+                            data.socketId
+                        );
+
+                    };
+
+
+                messageElement.appendChild(deleteButton);
+                messageElement.appendChild(banButton);
+                messageElement.appendChild(muteButton);
+                messageElement.appendChild(kickButton);
+
+            }
+
+
+            // PIN-BUTTON — Owner kann jede Nachricht anpinnen
+
+            if (isOwner) {
+
+                const pinButton =
+                    document
+                    .createElement("button");
+
+
+                pinButton.textContent =
+                    "📌 Pin";
+
+
+                pinButton
+                    .classList
+                    .add("pin-button");
+
+
+                pinButton.onclick =
+                    function() {
+
+                        socket.emit(
+                            "pin message",
+                            data.id
+                        );
+
+                    };
+
+
+                messageElement.appendChild(pinButton);
+
+            }
+
+
+            messages.appendChild(
+                messageElement
+            );
+
+
+            messages.scrollTop =
+                messages.scrollHeight;
+
+        }
+
+
+        // NACHRICHT LÖSCHEN
+
+        socket.on(
+            "delete message",
+            function(messageId) {
+
+                const message =
+                    document.querySelector(
+                        `[data-id="${messageId}"]`
+                    );
+
+
+                if (message) {
+
+                    message.remove();
+
+                }
+
+            }
+        );
+
+
+        // CHAT LEEREN
+
+        function clearChat() {
+
+            if (!confirm("Wirklich den gesamten Chatverlauf löschen?")) return;
+
+            socket.emit("clear messages");
+
+        }
+
+
+        socket.on(
+            "clear messages",
+            function() {
+
+                document
+                    .getElementById("messages")
+                    .innerHTML = "";
+
+            }
+        );
+
+
+        // NACHRICHT ANPINNEN
+
+        socket.on(
+            "pinned message",
+            function(data) {
+
+                const bar =
+                    document.getElementById("pinned-bar");
+
+                const text =
+                    document.getElementById("pinned-text");
+
+                const unpinBtn =
+                    document.getElementById("unpin-btn");
+
+                text.textContent =
+                    "📌 " + data.username + ": " +
+                    (data.type === "image" ? "[Bild]" : data.text);
+
+                bar.classList.add("visible");
+
+                unpinBtn.style.display =
+                    isOwner ? "inline-block" : "none";
+
+            }
+        );
+
+
+        socket.on(
+            "unpinned message",
+            function() {
+
+                document
+                    .getElementById("pinned-bar")
+                    .classList.remove("visible");
+
+            }
+        );
+
+
+        function unpinMessage() {
+
+            socket.emit("unpin message");
+
+        }
+
+
+        // ONLINE-NUTZER
+
+        socket.on(
+            "user list",
+            function(list) {
+
+                document
+                    .getElementById("online-count")
+                    .textContent = list.length;
+
+                const panel =
+                    document.getElementById("user-list-panel");
+
+                panel.innerHTML = "";
+
+                list.forEach(function(user) {
+
+                    const row =
+                        document.createElement("div");
+
+                    row.textContent =
+                        (user.isOwner ? "★ " : "") +
+                        user.username +
+                        (user.muted ? " (stumm)" : "");
+
+                    panel.appendChild(row);
+
+                });
+
+            }
+        );
+
+
+        function toggleUserList() {
+
+            document
+                .getElementById("user-list-panel")
+                .classList.toggle("visible");
+
+        }
+
+
+        // GESPERRTE NUTZER (nur Owner)
+
+        function toggleBannedList() {
+
+            const panel =
+                document.getElementById("banned-list-panel");
+
+            const willShow =
+                !panel.classList.contains("visible");
+
+            panel.classList.toggle("visible");
+
+            if (willShow) {
+
+                socket.emit("get banned list");
+
+            }
+
+        }
+
+
+        socket.on(
+            "banned list",
+            function(list) {
+
+                const panel =
+                    document.getElementById("banned-list-panel");
+
+                panel.innerHTML = "";
+
+                if (list.length === 0) {
+
+                    panel.textContent =
+                        "Keine gesperrten Nutzer.";
+
+                    return;
+
+                }
+
+                list.forEach(function(entry) {
+
+                    const row =
+                        document.createElement("div");
+
+                    row.classList.add("banned-row");
+
+                    const label =
+                        document.createElement("span");
+
+                    label.textContent =
+                        entry.username;
+
+                    const unbanButton =
+                        document.createElement("button");
+
+                    unbanButton.textContent =
+                        "Entsperren";
+
+                    unbanButton.onclick =
+                        function() {
+
+                            socket.emit(
+                                "unban user",
+                                entry.ip
+                            );
+
+                        };
+
+                    row.appendChild(label);
+                    row.appendChild(unbanButton);
+
+                    panel.appendChild(row);
+
+                });
+
+            }
+        );
+
+
+        // STUMMSCHALTUNG
+
+        socket.on(
+            "muted",
+            function() {
+
+                const input =
+                    document.getElementById("messageInput");
+
+                input.disabled = true;
+
+                input.placeholder =
+                    "Du wurdest stummgeschaltet.";
+
+                document
+                    .getElementById("image-button")
+                    .disabled = true;
+
+            }
+        );
+
+
+        socket.on(
+            "unmuted",
+            function() {
+
+                const input =
+                    document.getElementById("messageInput");
+
+                input.disabled = false;
+
+                input.placeholder =
+                    "Schreibe eine Nachricht...";
+
+                document
+                    .getElementById("image-button")
+                    .disabled = false;
+
+            }
+        );
+
+
+        // GEKICKT
+
+        socket.on(
+            "kicked",
+            function() {
+
+                document.body.innerHTML = `
+
+                    <div style="
+                        height:100vh;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        background:#111827;
+                        color:white;
+                        font-family:Arial;
+                    ">
+
+                        <h1>
+                            Du wurdest aus dem Chat entfernt.
+                        </h1>
+
+                    </div>
+
+                `;
+
+            }
+        );
+
+
+        // GEBANNT
+
+        socket.on(
+            "banned",
+            function() {
+
+                document.body.innerHTML = `
+
+                    <div style="
+                        height:100vh;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        background:#111827;
+                        color:white;
+                        font-family:Arial;
+                    ">
+
+                        <h1>
+                            Du bist aus diesem Chat gesperrt.
+                        </h1>
+
+                    </div>
+
+                `;
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
